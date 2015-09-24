@@ -1,0 +1,84 @@
+var userFieldOptions = { "removeProfile": 1, "simpleLink": 2, "removeLink": 3 }
+var userFieldOption = userFieldOptions.removeLink;
+
+var userFieldWithoutProfile = function( ctx, field, listItem, listSchema )
+{
+	var returnHTML = ""
+	if ( userFieldOption == userFieldOptions.removeProfile )
+	{
+		var fieldRender = new UserFieldRenderer( field.Name );
+		UserFieldRenderer_InitializePrototype();
+		var defaultHTML = fieldRender.RenderField( ctx, field, listItem, listSchema );
+		insertPlace = defaultHTML.indexOf( "\"", defaultHTML.indexOf( "_layouts/15/userdisp.aspx?" ) )
+		returnHTML = defaultHTML.substring( 0, insertPlace ) + "&force=true" + defaultHTML.substring( insertPlace )
+	}
+	if ( userFieldOption == userFieldOptions.simpleLink )
+	{
+		var userID = ctx.CurrentItem[ ctx.CurrentFieldSchema.Name ][0].ID;
+		if ( typeof this.href === "undefined" ) {
+			currentPageUrl = document.location.toString();
+		} else {
+			currentPageUrl = this.href.toString();
+		}
+		var currentPageUrlEncoded = encodeURIComponent( currentPageUrl );
+		returnHTML += "<a href='" + ctx.HttpRoot + "/_layouts/userdisp.aspx?id=" + userID + "&force=true&Source=" + currentPageUrlEncoded + "'>";
+		returnHTML += ctx.CurrentItem[ ctx.CurrentFieldSchema.Name ][0].title;
+		returnHTML += "</a>";
+	}
+	if ( userFieldOption == userFieldOptions.removeLink )
+	{
+		returnHTML = ctx.CurrentItem[ ctx.CurrentFieldSchema.Name ][0].title;
+	}
+	return returnHTML;
+};
+
+(function(){
+	var overrideCtx = {};
+	overrideCtx.Templates = {};
+	userFieldWithoutProfileFieldTemplate = { "View": userFieldWithoutProfile, "DisplayForm": userFieldWithoutProfile };
+	overrideCtx.Templates.Fields = { "Author": userFieldWithoutProfileFieldTemplate,
+					"Editor": userFieldWithoutProfileFieldTemplate };
+	SPClientTemplates.TemplateManager.RegisterTemplateOverrides( overrideCtx );
+})();
+var rewriteUserLinks = function()
+{
+	var anchors = document.getElementsByTagName( 'a' );
+	var number = 0;
+	for ( var i = 0; i < anchors.length; i++ ) {
+		hrefAttr = anchors[ i ].attributes[ "href" ];
+		if ( typeof hrefAttr != "undefined" ) {
+			href = hrefAttr.value
+			if ( href.indexOf( "/_layouts/15/userdisp.aspx?" ) > -1 )
+			{
+				if ( userFieldOption == userFieldOptions.removeProfile )
+				{
+					if ( href.indexOf( "&force=true" ) == -1 )
+					{
+						var newHref = href + "&force=true";
+						anchors[ i ].setAttribute( 'href', newHref );
+					}
+				}
+				if ( userFieldOption == userFieldOptions.simpleLink )
+				{
+					if ( href.indexOf( "&force=true" ) == -1 )
+					{
+						var newHref = href + "&force=true";
+						anchors[ i ].setAttribute( 'href', newHref );
+					}
+				}
+				if ( userFieldOption == userFieldOptions.removeLink )
+				{
+					var newSpan = document.createElement( 'span' );
+					newSpan.innerText = anchors[ i ].innerText
+					var parentNode = anchors[ i ].parentNode
+					parentNode.insertBefore( newSpan, anchors[ i ] );
+					parentNode.removeChild( anchors[ i ] );
+				}
+			}
+		}
+	}
+};
+
+(function(){
+	_spBodyOnLoadFunctionNames.push("rewriteUserLinks");
+})();
