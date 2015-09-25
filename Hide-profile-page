@@ -80,5 +80,5 @@ var rewriteUserLinks = function()
 };
 
 (function(){
-	_spBodyOnLoadFunctionNames.push("rewriteUserLinks");
+	_spBodyOnLoadFunctionNames.push( "rewriteUserLinks" );
 })();
