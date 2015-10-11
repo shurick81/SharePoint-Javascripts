@@ -1,0 +1,138 @@
+	<script type="text/javascript">
+		/* hiding and filling columns */
+		function endsWith(str, suffix)
+		{
+			return str.indexOf(suffix, str.length - suffix.length) !== -1;
+		}
+		function beginsWith(str, suffix)
+		{
+			return str.indexOf(suffix) == 0;
+		}		
+		function URLToArray()
+		{
+			var parameters = [];
+			var url = window.location.search;
+			if (url.indexOf('?')!=-1)
+			{
+				var pairs = url.substring(url.indexOf('?') + 1).split('&');
+				for (var i = 0; i < pairs.length; i++) {
+					var pair = pairs[i].split('=');
+					parameters[parameters.length] = [decodeURIComponent(pair[0]),decodeURIComponent(pair[1])]
+				}
+			}
+			return parameters;
+		}
+		function setColumnValue(columnTitle, value)
+		{
+			var tds = document.getElementsByTagName('td');
+			for (i = 0; i < tds.length; i++)
+			{
+				if (tds[i].className == 'ms-formbody')
+				{
+					columntd = tds[i];
+					var items = columntd.getElementsByTagName('input');
+					for (n = 0; n < items.length; n++)
+					{							
+						if (beginsWith(items[n].id,columnTitle + '_'))
+						{
+							if (endsWith(items[n].id, 'TextField'))
+							{
+								items[n].value = value;
+							}
+							if (endsWith(items[n].id, '$ClientPeoplePicker_EditorInput'))
+							{
+								items[n].value = value;
+								var spPeoplePicker = SPClientPeoplePicker.SPClientPeoplePickerDict[items[n].parentNode.id];
+								spPeoplePicker.AddUnresolvedUserFromEditor(true);
+							}
+						}
+					}
+					var items = columntd.getElementsByTagName('select');
+					for (n = 0; n < items.length; n++)
+					{		
+						if (beginsWith(items[n].id,columnTitle + '_'))
+						{
+							if (endsWith(items[n].id, 'LookupField'))
+							{
+								options = items[n].getElementsByTagName('option');
+								for (m = 0; m < options.length; m++)
+								{
+									if (options[m].value == value)
+									{
+										options[m].selected = 'selected';
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		function setColumnsValue()
+		{
+			urlParameters = URLToArray();
+			for (a = 0; a < urlParameters.length; a++)
+			{
+				if (urlParameters[a][1]!='undefined')
+				{
+					if (endsWith(urlParameters[a][0],"HideValue"))
+					{
+						urlParameter = urlParameters[a][0];
+						columnTitle = urlParameter.substr(0, urlParameter.length-9);
+						setColumnValue(columnTitle, urlParameters[a][1]);
+					}
+					else if (endsWith(urlParameters[a][0],"Value"))
+					{
+						urlParameter = urlParameters[a][0];
+						columnTitle = urlParameter.substr(0, urlParameter.length-5);
+						setColumnValue(columnTitle, urlParameters[a][1]);
+					}
+				}
+			}
+		}
+		function hideColumn(columnTitle)
+		{
+			var tds = document.getElementsByTagName('td');
+			for (i = 0; i < tds.length; i++)
+			{
+				if (tds[i].className == 'ms-formbody')
+				{
+					columntd = tds[i];
+					var spans = columntd.getElementsByTagName('span');
+					for (n = 0; n < spans.length ; n++)
+					{
+						var dataAttributes = spans[n].attributes["data-sp-options"];
+						if (dataAttributes != null)
+						{
+							jsonObj = JSON.parse(dataAttributes.nodeValue);
+							if (jsonObj.source == columnTitle)
+							{
+								columntd.parentNode.style.display = 'none';
+							}
+						}
+					}
+				}
+			}
+		}
+		function hideColumns()
+		{
+			urlParameters = URLToArray();
+			for (a = 0; a < urlParameters.length; a++)
+			{
+				if (endsWith(urlParameters[a][0],"Hide"))
+				{
+					urlParameter = urlParameters[a][0];
+					columnTitle = urlParameter.substr(0, urlParameter.length-4);
+					hideColumn(columnTitle);
+				}
+				if (endsWith(urlParameters[a][0],"HideValue"))
+				{
+					urlParameter = urlParameters[a][0];
+					columnTitle = urlParameter.substr(0, urlParameter.length-9);
+					hideColumn(columnTitle);
+				}
+			}
+		}
+		hideColumns();
+		_spBodyOnLoadFunctionNames.push("setColumnsValue");
+	</script>
